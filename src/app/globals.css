@@ -1,0 +1,137 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-navy: var(--navy);
+  --color-navy-light: var(--navy-light);
+  --color-gold: var(--gold);
+  --color-gold-hover: var(--gold-hover);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* LexNavigator-inspired navy + gold palette */
+  --navy: #2c3e50;
+  --navy-light: #374b5e;
+  --gold: #f9e531;
+  --gold-hover: #e5cd11;
+
+  --background: #f0f1f3;
+  --foreground: #1a1f2e;
+  --card: #ffffff;
+  --card-foreground: #1a1f2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1f2e;
+  --primary: #2c3e50;
+  --primary-foreground: #ffffff;
+  --secondary: #e4e8ed;
+  --secondary-foreground: #2c3e50;
+  --muted: #e4e8ed;
+  --muted-foreground: #5a6577;
+  --accent: #edf0f4;
+  --accent-foreground: #2c3e50;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #cbd3dc;
+  --input: #cbd3dc;
+  --ring: #2c3e50;
+  --chart-1: #2c3e50;
+  --chart-2: #00a6dd;
+  --chart-3: #f9e531;
+  --chart-4: #90ee90;
+  --chart-5: #ce444a;
+  --sidebar: #2c3e50;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #f9e531;
+  --sidebar-primary-foreground: #1a1f2e;
+  --sidebar-accent: #374b5e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #374b5e;
+  --sidebar-ring: #f9e531;
+}
+
+.dark {
+  --background: #0f1923;
+  --foreground: #e2e8f0;
+  --card: #1a2736;
+  --card-foreground: #e2e8f0;
+  --popover: #1a2736;
+  --popover-foreground: #e2e8f0;
+  --primary: #f9e531;
+  --primary-foreground: #1a1f2e;
+  --secondary: #253344;
+  --secondary-foreground: #e2e8f0;
+  --muted: #253344;
+  --muted-foreground: #8899aa;
+  --accent: #253344;
+  --accent-foreground: #e2e8f0;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #2a3a4d;
+  --input: #2a3a4d;
+  --ring: #f9e531;
+  --chart-1: #00a6dd;
+  --chart-2: #f9e531;
+  --chart-3: #90ee90;
+  --chart-4: #ce444a;
+  --chart-5: #add8e6;
+  --sidebar: #0f1923;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #f9e531;
+  --sidebar-primary-foreground: #1a1f2e;
+  --sidebar-accent: #1a2736;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: #2a3a4d;
+  --sidebar-ring: #f9e531;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

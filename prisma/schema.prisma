@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         String   @default("EMPLOYEE") // EMPLOYEE | MANAGER | ADMIN
+  department   String?
+  status       String   @default("ACTIVE") // ACTIVE | INACTIVE
+  hoursPerDay  Float    @default(8.0)
+
+  managerId String?
+  manager   Employee?  @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates Employee[] @relation("ManagerSubordinates")
+
+  scheduleId String?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id])
+
+  timesheetDays TimesheetDay[]
+  approvals     Approval[]     @relation("Approver")
+  auditLogs     AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Schedule {
+  id             String @id @default(uuid())
+  name           String
+  type           String @default("FIX") // FIX | FEREASTRA | FLEX
+  startTime      String // "09:00"
+  endTime        String // "17:00"
+
+  // Window fields (FEREASTRA type)
+  startWindowEnd String?  // e.g. "10:00" - latest allowed start (window = startTime..startWindowEnd)
+  endWindowStart String?  // e.g. "16:00" - earliest allowed end (window = endWindowStart..endTime)
+
+  // Tolerance (FIX type - minutes before/after fixed times that trigger anomaly)
+  earlyStartMinutes Int @default(30)  // start before (startTime - 30min) = EARLY_START
+  lateEndMinutes    Int @default(30)  // end after (endTime + 30min) = LATE_END
+
+  minHoursPerDay Float  @default(8.0)
+  breakMinutes   Int    @default(30)
+
+  employees Employee[]
+  createdAt DateTime @default(now())
+}
+
+model TimesheetDay {
+  id           String   @id @default(uuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  date         DateTime // just the date portion
+  startTime    DateTime? // timestamp of clock-in
+  endTime      DateTime? // timestamp of clock-out
+  breaks       String   @default("[]") // JSON string: [{start: ISO, end: ISO}]
+  totalMinutes Int?     // calculated after stop
+  status       String   @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | REJECTED | LOCKED
+  dayType      String   @default("WORK") // WORK | CO | CM | HOLIDAY
+  note         String?
+
+  approvals Approval[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+model Approval {
+  id             String       @id @default(uuid())
+  timesheetDayId String
+  timesheetDay   TimesheetDay @relation(fields: [timesheetDayId], references: [id])
+  approverId     String
+  approver       Employee     @relation("Approver", fields: [approverId], references: [id])
+  decision       String       // APPROVED | REJECTED
+  comment        String?
+  createdAt      DateTime     @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  entity    String   // "TimesheetDay", "Employee", etc.
+  entityId  String
+  action    String   // CREATE | UPDATE | APPROVE | REJECT | LOCK | CLOCK_IN | CLOCK_OUT | CLOCK_PAUSE | CLOCK_RESUME
+  before    String?  // JSON
+  after     String?  // JSON
+  actorId   String
+  actor     Employee @relation(fields: [actorId], references: [id])
+  timestamp DateTime @default(now())
+}
