@@ -587,6 +587,116 @@ export async function getTimesheetDay(
   };
 }
 
+/**
+ * Create a manual timesheet entry for a past date when the employee forgot to clock in.
+ */
+export async function createManualTimesheetDay(
+  userId: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  note?: string
+) {
+  // Validate employee exists
+  const employee = await prisma.employee.findUnique({
+    where: { id: userId },
+  });
+  if (!employee) {
+    throw new Error("Employee not found");
+  }
+
+  // Parse the target date
+  const [year, month, day] = date.split("-").map(Number);
+  const targetDate = new Date(Date.UTC(year, month - 1, day));
+
+  // Validate: date is in the past
+  const now = new Date();
+  const todayUTC = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+  if (targetDate >= todayUTC) {
+    throw new Error("Manual entries can only be created for past dates");
+  }
+
+  // Validate: date is a weekday
+  const dayOfWeek = targetDate.getUTCDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    throw new Error("Manual entries cannot be created for weekends");
+  }
+
+  // Validate: no existing record for that date+employee
+  const existing = await prisma.timesheetDay.findUnique({
+    where: {
+      employeeId_date: {
+        employeeId: userId,
+        date: targetDate,
+      },
+    },
+  });
+  if (existing) {
+    throw new Error("A timesheet entry already exists for this date");
+  }
+
+  // Validate: month is not locked
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const monthEnd = new Date(Date.UTC(year, month, 1));
+
+  const lockedCount = await prisma.timesheetDay.count({
+    where: {
+      employeeId: userId,
+      date: { gte: monthStart, lt: monthEnd },
+      status: DAY_STATUS.LOCKED,
+    },
+  });
+  if (lockedCount > 0) {
+    throw new Error("Cannot modify a locked month");
+  }
+
+  // Convert HH:mm to full ISO timestamps using the date
+  const [startH, startM] = startTime.split(":").map(Number);
+  const [endH, endM] = endTime.split(":").map(Number);
+
+  const startDateTime = new Date(targetDate);
+  startDateTime.setUTCHours(startH, startM, 0, 0);
+
+  const endDateTime = new Date(targetDate);
+  endDateTime.setUTCHours(endH, endM, 0, 0);
+
+  if (endDateTime <= startDateTime) {
+    throw new Error("End time must be after start time");
+  }
+
+  // Calculate totalMinutes
+  const totalMinutes = Math.max(
+    0,
+    Math.round((endDateTime.getTime() - startDateTime.getTime()) / 60_000)
+  );
+
+  const created = await prisma.timesheetDay.create({
+    data: {
+      employeeId: userId,
+      date: targetDate,
+      startTime: startDateTime,
+      endTime: endDateTime,
+      status: DAY_STATUS.DRAFT,
+      dayType: DAY_TYPE.WORK,
+      breaks: "[]",
+      totalMinutes,
+      note: note ?? null,
+    },
+  });
+
+  await createAuditLog({
+    entity: "TimesheetDay",
+    entityId: created.id,
+    action: "CREATE",
+    actorId: userId,
+    after: { date, startTime, endTime, status: "DRAFT" },
+  });
+
+  return toTodayTimesheet(created);
+}
+
 // ---------------------------------------------------------------------------
 // Leave / Absence Management
 // ---------------------------------------------------------------------------

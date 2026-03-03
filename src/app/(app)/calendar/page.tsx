@@ -10,6 +10,7 @@ export default function CalendarPage() {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: calendarDays, isLoading } = useCalendarData(
@@ -24,15 +25,15 @@ export default function CalendarPage() {
 
   const handleDayClick = (date: string, timesheetId: string | null) => {
     setSelectedDayId(timesheetId);
-    if (timesheetId) {
-      setDialogOpen(true);
-    }
+    setSelectedDate(date);
+    setDialogOpen(true);
   };
 
   const handleDialogOpenChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
       setSelectedDayId(null);
+      setSelectedDate(null);
     }
   };
 
@@ -53,6 +54,7 @@ export default function CalendarPage() {
 
       <DayDetailDialog
         timesheetId={selectedDayId}
+        date={selectedDate}
         open={dialogOpen}
         onOpenChange={handleDialogOpenChange}
       />

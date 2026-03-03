@@ -193,6 +193,30 @@ export function useRemoveLeave() {
   });
 }
 
+export function useCreateManualTimesheet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { date: string; startTime: string; endTime: string; note?: string }) => {
+      const res = await fetch("/api/timesheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error || "Failed to create timesheet entry");
+      }
+      const json: ApiResponse<TodayTimesheet> = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to create timesheet entry");
+      return json.data as TodayTimesheet;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+    },
+  });
+}
+
 export function useAlerts() {
   return useQuery<EmployeeAlert[]>({
     queryKey: ["alerts"],

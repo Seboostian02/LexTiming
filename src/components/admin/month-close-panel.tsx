@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import {
   Lock,
   Loader2,
@@ -60,12 +61,14 @@ const MONTHS = [
 
 interface BlockerCardProps {
   title: string;
+  description: string;
   icon: React.ReactNode;
   items: CloseBlockerItem[];
   colorClass: string; // tailwind border / bg classes
+  extra?: React.ReactNode;
 }
 
-function BlockerCard({ title, icon, items, colorClass }: BlockerCardProps) {
+function BlockerCard({ title, description, icon, items, colorClass, extra }: BlockerCardProps) {
   const [expanded, setExpanded] = useState(false);
   const totalCount = items.reduce((s, i) => s + i.count, 0);
 
@@ -95,6 +98,8 @@ function BlockerCard({ title, icon, items, colorClass }: BlockerCardProps) {
               />
             </button>
           </CollapsibleTrigger>
+          <p className="text-xs text-muted-foreground">{description}</p>
+          {extra}
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="pt-0">
@@ -269,7 +274,8 @@ export function MonthClosePanel() {
                   </div>
 
                   <BlockerCard
-                    title="Draft Days"
+                    title="Unsubmitted Days"
+                    description="Employees haven't submitted these days for approval yet."
                     icon={
                       <FileX className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     }
@@ -278,16 +284,26 @@ export function MonthClosePanel() {
                   />
 
                   <BlockerCard
-                    title="Submitted (Unapproved)"
+                    title="Pending Approval"
+                    description="These days are waiting for manager approval."
                     icon={
                       <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                     }
                     items={data.blockers.submittedDays}
                     colorClass="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"
+                    extra={
+                      <Link
+                        href="/approvals"
+                        className="text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                      >
+                        Go to Approvals &rarr;
+                      </Link>
+                    }
                   />
 
                   <BlockerCard
                     title="Missing Clock-Out"
+                    description="Employee clocked in but never clocked out."
                     icon={
                       <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
                     }
@@ -297,6 +313,7 @@ export function MonthClosePanel() {
 
                   <BlockerCard
                     title="Missing Days"
+                    description="Workdays with no timesheet entry. Employees need to add manual entries."
                     icon={
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                     }
@@ -323,10 +340,10 @@ export function MonthClosePanel() {
                   </Button>
                 ) : (
                   <>
-                    <Button disabled className="gap-2">
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Lock className="h-4 w-4" />
-                      Resolve blockers first
-                    </Button>
+                      Normal close is blocked. Resolve the issues above, or use Force Close to lock only APPROVED entries.
+                    </p>
                     <Button
                       variant="outline"
                       onClick={() => setForceDialogOpen(true)}

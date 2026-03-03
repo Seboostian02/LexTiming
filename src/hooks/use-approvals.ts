@@ -8,7 +8,7 @@ export function usePendingApprovals() {
       const res = await fetch("/api/approvals");
       if (!res.ok) {
         const json = await res.json().catch(() => null);
-        throw new Error(json?.error || "Failed to fetch pending approvals");
+        throw new Error(`${res.status}: ${json?.error || "Failed to fetch pending approvals"}`);
       }
       const data: ApiResponse<ApprovalItem[]> = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to fetch pending approvals");

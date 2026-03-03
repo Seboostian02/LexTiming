@@ -299,9 +299,24 @@ export async function closeMonth(
   if (!force) {
     const validation = await getMonthCloseValidation(year, month);
     if (!validation.canClose) {
-      throw new Error(
-        `Cannot close month: ${validation.totalBlockers} blocker(s) remaining. Use force to override.`
-      );
+      const parts: string[] = [];
+      if (validation.blockers.draftDays.length > 0) {
+        const count = validation.blockers.draftDays.reduce((s, b) => s + b.count, 0);
+        parts.push(`${count} unsubmitted day${count !== 1 ? 's' : ''}`);
+      }
+      if (validation.blockers.submittedDays.length > 0) {
+        const count = validation.blockers.submittedDays.reduce((s, b) => s + b.count, 0);
+        parts.push(`${count} pending approval`);
+      }
+      if (validation.blockers.missingEndDays.length > 0) {
+        const count = validation.blockers.missingEndDays.reduce((s, b) => s + b.count, 0);
+        parts.push(`${count} missing clock-out`);
+      }
+      if (validation.blockers.missingDays.length > 0) {
+        const count = validation.blockers.missingDays.reduce((s, b) => s + b.count, 0);
+        parts.push(`${count} missing day${count !== 1 ? 's' : ''}`);
+      }
+      throw new Error(`Cannot close month: ${parts.join(', ')}. Resolve blockers or use Force Close.`);
     }
   }
 

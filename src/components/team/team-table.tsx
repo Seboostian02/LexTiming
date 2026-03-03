@@ -335,7 +335,7 @@ export function TeamTable({ members, isLoading, onEmployeeClick, onMarkLeave }: 
         {members.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-muted-foreground">
-              No team members found. Employees assigned to you will appear here.
+              No employees assigned to you. Ask an admin to set you as manager in the Employees page.
             </p>
           </div>
         ) : (

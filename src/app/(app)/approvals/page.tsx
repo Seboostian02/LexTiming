@@ -9,7 +9,7 @@ import { ROLES } from "@/lib/constants";
 
 export default function ApprovalsPage() {
   const { user } = useAuth();
-  const { data: approvals, isLoading, isError } = usePendingApprovals();
+  const { data: approvals, isLoading, isError, error } = usePendingApprovals();
   const processApproval = useProcessApproval();
   const isAdmin = user?.role === ROLES.ADMIN;
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -50,8 +50,11 @@ export default function ApprovalsPage() {
       {isError ? (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
           <p className="text-sm text-destructive">
-            Failed to load approvals. You may not have permission to view this
-            page, or there was a server error. Please try refreshing.
+            {error?.message?.startsWith("401")
+              ? "Session expired. Please log in again."
+              : error?.message?.startsWith("403")
+                ? "Your account doesn't have Manager permissions."
+                : "Failed to load approvals. Please try refreshing, or contact an admin if the issue persists."}
           </p>
         </div>
       ) : (

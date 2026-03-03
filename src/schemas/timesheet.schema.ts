@@ -18,5 +18,13 @@ export const updateTimesheetSchema = z.object({
   note: z.string().optional(),
 });
 
+export const manualTimesheetSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  note: z.string().optional(),
+});
+
 export type ClockActionInput = z.infer<typeof clockActionSchema>;
 export type UpdateTimesheetInput = z.infer<typeof updateTimesheetSchema>;
+export type ManualTimesheetInput = z.infer<typeof manualTimesheetSchema>;

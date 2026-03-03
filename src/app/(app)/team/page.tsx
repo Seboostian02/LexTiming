@@ -9,7 +9,7 @@ import { useTeamMembers } from "@/hooks/use-team";
 import type { TeamMember } from "@/types/employee";
 
 export default function TeamPage() {
-  const { data: members, isLoading, isError } = useTeamMembers();
+  const { data: members, isLoading, isError, error } = useTeamMembers();
   const [selectedEmployee, setSelectedEmployee] = useState<TeamMember | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [leaveEmployee, setLeaveEmployee] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
@@ -37,8 +37,11 @@ export default function TeamPage() {
       {isError ? (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
           <p className="text-sm text-destructive">
-            Failed to load team data. You may not have permission to view this
-            page, or there was a server error. Please try refreshing.
+            {error?.message?.startsWith("401")
+              ? "Session expired. Please log in again."
+              : error?.message?.startsWith("403")
+                ? "Your account doesn't have Manager permissions."
+                : "Failed to load team data. Please try refreshing, or contact an admin if the issue persists."}
           </p>
         </div>
       ) : (

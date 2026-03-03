@@ -20,11 +20,13 @@ import {
   useTimesheetDay,
   useUpdateTimesheet,
   useSubmitTimesheet,
+  useCreateManualTimesheet,
 } from "@/hooks/use-timesheet";
 import { cn } from "@/lib/utils";
 
 interface DayDetailDialogProps {
   timesheetId: string | null;
+  date?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -71,17 +73,21 @@ function timeInputToIso(dateStr: string, timeStr: string): string {
 
 export function DayDetailDialog({
   timesheetId,
+  date,
   open,
   onOpenChange,
 }: DayDetailDialogProps) {
+  const isCreateMode = !timesheetId && !!date;
+
   const {
     data: dayDetail,
     isLoading,
     isError,
-  } = useTimesheetDay(open ? timesheetId : null);
+  } = useTimesheetDay(open && !isCreateMode ? timesheetId : null);
 
   const updateMutation = useUpdateTimesheet();
   const submitMutation = useSubmitTimesheet();
+  const createMutation = useCreateManualTimesheet();
 
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
@@ -91,13 +97,21 @@ export function DayDetailDialog({
   // Sync form state when async day detail loads
   useEffect(() => {
     if (dayDetail) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditStartTime(isoToTimeInput(dayDetail.startTime));
       setEditEndTime(isoToTimeInput(dayDetail.endTime));
       setEditNote(dayDetail.note ?? "");
       setCorrectionReason("");
     }
   }, [dayDetail]);
+
+  // Reset form for create mode
+  useEffect(() => {
+    if (isCreateMode && open) {
+      setEditStartTime("");
+      setEditEndTime("");
+      setEditNote("");
+    }
+  }, [isCreateMode, open]);
 
   const isEditable =
     dayDetail?.status === "DRAFT" || dayDetail?.status === "REJECTED";
@@ -171,6 +185,14 @@ export function DayDetailDialog({
     });
   };
 
+  const handleCreate = () => {
+    if (!date || !editStartTime || !editEndTime) return;
+    createMutation.mutate(
+      { date, startTime: editStartTime, endTime: editEndTime, note: editNote || undefined },
+      { onSuccess: () => onOpenChange(false) }
+    );
+  };
+
   const breakCount = dayDetail?.breaks?.length ?? 0;
   const totalBreakMinutes =
     dayDetail?.breaks?.reduce((sum, b) => {
@@ -186,11 +208,13 @@ export function DayDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            {dayDetail
+            {isCreateMode && date
+              ? `Add Manual Entry — ${format(new Date(date + "T00:00:00"), "EEEE, MMMM d, yyyy")}`
+              : dayDetail
               ? format(new Date(dayDetail.date), "EEEE, MMMM d, yyyy")
               : "Day Details"}
           </DialogTitle>
-          {dayDetail && (
+          {!isCreateMode && dayDetail && (
             <DialogDescription className="flex items-center gap-2">
               Status:{" "}
               <Badge variant={getStatusBadgeVariant(dayDetail.status)}>
@@ -201,24 +225,89 @@ export function DayDetailDialog({
               )}
             </DialogDescription>
           )}
+          {isCreateMode && (
+            <DialogDescription>
+              Create a timesheet entry for this missed day.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
+        {/* Create mode */}
+        {isCreateMode && (
+          <>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="create-start-time">Start Time</Label>
+                  <Input
+                    id="create-start-time"
+                    type="time"
+                    value={editStartTime}
+                    onChange={(e) => setEditStartTime(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-end-time">End Time</Label>
+                  <Input
+                    id="create-end-time"
+                    type="time"
+                    value={editEndTime}
+                    onChange={(e) => setEditEndTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="create-note">Note</Label>
+                <Textarea
+                  id="create-note"
+                  placeholder="Add a note about this day..."
+                  value={editNote}
+                  onChange={(e) => setEditNote(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {createMutation.isError && (
+                <p className="text-sm text-destructive">
+                  {createMutation.error.message}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                onClick={handleCreate}
+                disabled={!editStartTime || !editEndTime || createMutation.isPending}
+                className="gap-2"
+              >
+                {createMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Entry
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
         {/* Loading state */}
-        {isLoading && (
+        {!isCreateMode && isLoading && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {/* Error state */}
-        {isError && (
+        {!isCreateMode && isError && (
           <div className="py-4 text-center text-sm text-destructive">
             Failed to load day details. Please try again.
           </div>
         )}
 
         {/* Content */}
-        {dayDetail && !isLoading && (
+        {!isCreateMode && dayDetail && !isLoading && (
           <div className="space-y-4">
             {/* Rejection comment warning */}
             {dayDetail.status === "REJECTED" && rejectionComment && (
